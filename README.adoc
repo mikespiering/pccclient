@@ -7,37 +7,60 @@
 
 == Overview
 
-This runs an embedded spring-boot based pcc (gemfire/geode) cache server that will have both manager and locator part of it.
+This runs a cache client that connects to a cache server running locally or to a manged service in PCF through service binding.
+This implementation is based on look aside cache that is been abstracted using spring caching aspect.
 
 == Getting Started
-As always with spring-boot, a simple annotation would get you started. Annotate the main class with
+As always with spring-boot, a simple annotation would get you started. Annotate the Configuration class with
 ```
-@CacheServerApplication
+@ClientCacheApplication
 ```
-to get started with an embedded cache server. Following annotations would configure manager and locator as well.
+to get started with client cache configuration. Along with the following annotations,
 ```
-@EnableLocator
-@EnableManger
+@Configuration
+@EnableEntityDefinedRegions(basePackages = { "io.pivotal.pccclient.region" })
+@EnableGemfireRepositories(basePackages = { "io.pivotal.pccclient.repository" })
+@EnableLogging(logLevel = "info")
+@EnableCaching(proxyTargetClass = true)
+@ClientCacheApplication()
+@EnablePdx
 ```
+
+- `@ClientCacheApplication` marks it to be a gemfire/geode cache client
+- `@EnableEntityDefinedRegions` marks spring application to enable the creation of gemfire/geode `Regions` based on the application persistent entities
+- `@EnableGemfireRepositories` marks spring application to enable gemfire/geode repos
+- `@EnableCaching` is the spring abstraction for cache management
 
 == Customization
-If the default needs to be changed, let's say the locator listen port needs to be custom configured, then
+If the default needs to be changed, let's say connection parameters, it can be down with params
 ```
-@EnableLocator(port = 20388)
+@ClientCacheApplication(maxConnections = 100, minConnections = 10)
 ```
-In a similar way, other options can be configured for the manager and cache server.
+In a similar way, other options can be modified/tweaked accordingly either through annotations or through spring.data.gemfire.* properties
 
-== Cache creation
-Following code would initialize the Partitioned cache region on the embedded server,
+== Region
+Define a region entity by annotating the domain object with `@Region` annotation
 ```
-@Bean(name = "formula1region")
-	PartitionedRegionFactoryBean formual1Region(Cache gemfireCache) {
-		PartitionedRegionFactoryBean f1 = new PartitionedRegionFactoryBean<>();
-		f1.setCache(gemfireCache);
-		f1.setClose(false);
-		f1.setPersistent(false);
-		return f1;
-	}
-```
-This initialises a region named `formula1region`.
+@Region("formula1region")
+public class Car implements Serializable {
 
+	...
+}
+```
+`formula1region` is important as it is name being used in the cache server to create a gemfire region.
+
+== Repository
+Define a repository to act on the region entity
+```
+@Repository
+interface CarRepository extends CrudRepository<Car, String> {
+
+...
+}
+```
+With spring data jpa API, data can be stored and retrieved. This uses a persistence store as well. Data by default will be persisted in a
+datastore.
+
+== Client-Cache
+Use spring caching annotation to put the data to the cache server `@Cacheable(value = "cars")`.
+This is based on look aside pattern. When there is a cache miss, data will be put into the server automatically by spring caching abstraction. On subsequent calls, data will be served from the cache layer.
