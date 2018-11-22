@@ -1,7 +1,5 @@
 package io.pivotal.pccclient.config;
 
-import io.pivotal.pccclient.region.Car;
-import io.pivotal.spring.cloud.service.gemfire.GemfireServiceConnectorConfig;
 import org.apache.geode.cache.client.ClientCache;
 import org.apache.geode.cache.client.ClientRegionShortcut;
 import org.apache.geode.pdx.ReflectionBasedAutoSerializer;
@@ -12,18 +10,19 @@ import org.springframework.cloud.service.ServiceConnectorConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.gemfire.client.ClientRegionFactoryBean;
-import org.springframework.data.gemfire.config.annotation.ClientCacheApplication;
 import org.springframework.data.gemfire.config.annotation.EnableEntityDefinedRegions;
 import org.springframework.data.gemfire.config.annotation.EnableLogging;
 import org.springframework.data.gemfire.config.annotation.EnablePdx;
 import org.springframework.data.gemfire.repository.config.EnableGemfireRepositories;
 
+import io.pivotal.pccclient.region.Car;
+import io.pivotal.spring.cloud.service.gemfire.GemfireServiceConnectorConfig;
+
 @Configuration
 @EnableEntityDefinedRegions(basePackages = { "io.pivotal.pccclient.region" })
 @EnableGemfireRepositories(basePackages = { "io.pivotal.pccclient.repository" })
 @EnableLogging(logLevel = "info")
-@EnableCaching(proxyTargetClass = true)
-@ClientCacheApplication()
+@EnableCaching
 @EnablePdx
 public class CacheConfiguration extends AbstractCloudConfig {
 
@@ -48,7 +47,7 @@ public class CacheConfiguration extends AbstractCloudConfig {
 
 	@Bean
 	public ClientCache gemfireCache(ServiceConnectorConfig serviceConnectorConfig) {
-		return cloud().getServiceConnector("f1pccservice", ClientCache.class,
+		return cloud().getServiceConnector("pcc-ds", ClientCache.class,
 				serviceConnectorConfig);
 
 	}
