@@ -1,20 +1,23 @@
 package io.pivotal.pccclient.controller;
 
-import io.micrometer.core.annotation.Timed;
-import io.pivotal.pccclient.region.Car;
-import io.pivotal.pccclient.service.CarService;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import io.micrometer.core.annotation.Timed;
+import io.pivotal.pccclient.region.Car;
+import io.pivotal.pccclient.service.CarService;
 
 @RestController
 public class CarController {
 
-	@Autowired
-	private CarService carService;
+	private final CarService carService;
+
+	CarController(CarService carService) {
+		this.carService = carService;
+	}
 
 	@GetMapping("/all")
 	@Timed(value = "getAllF1Cars")
